@@ -1,40 +1,26 @@
-# Dataset de validación (Fase 0)
+# Dataset Fase 0 (alimentado por el piloto HITL)
 
-Fotos reales de equipos para medir precisión OCR. **Sin este dataset, el gate de Fase 1 no es válido.**
+Las etiquetas **correctas** se generan con intervención humana en http://localhost:8000/ui/
 
-## Estructura
+## Archivos
 
-```
-dataset/
-├── images/           # archivos .jpg / .jpeg / .png / .heic
-├── ground_truth.csv  # etiquetas (ground truth)
-└── README.md
-```
+| Archivo | Rol |
+|---|---|
+| `images/` | Fotos validadas (`piloto_<run>_<codigo>.jpg`) |
+| `ground_truth.csv` | Etiquetas para evaluación Fase 1 |
+| `feedback.jsonl` | Auditoría: OCR vs humano, confianza, notas |
 
-## Cómo etiquetar
+## Columnas `ground_truth.csv`
 
-1. Copiar fotos a `dataset/images/` con nombres estables, p. ej. `zgru_h_001.jpg`.
-2. Añadir una fila en `ground_truth.csv` por imagen.
-3. Columnas:
+`nombre_archivo, codigo_correcto, tipo, orientacion, dificultad, notas, run_id, codigo_ocr, confianza_ocr, acierto, validado_en`
 
-| Columna | Valores | Descripción |
-|---|---|---|
-| `nombre_archivo` | nombre con extensión | Debe existir en `images/` |
-| `codigo_correcto` | ej. `ZGRU12345` | Código real del equipo |
-| `tipo` | `ZGRU` \| `SERIAL` | Tipo de detección esperada |
-| `orientacion` | `horizontal` \| `vertical` \| `n/a` | Orientación del texto |
-| `dificultad` | `normal` \| `dificil` | Condiciones de captura |
-| `notas` | texto libre | Opcional |
+- `codigo_correcto` = verdad humana (la que cuenta en Fase 1)
+- `codigo_ocr` = lo que propuso el piloto
+- `acierto` = `true` si coincidieron (normalizado)
 
-## Cupos mínimos (gate Fase 0)
+## Flujo
 
-- 25 ZGRU horizontal  
-- 25 ZGRU vertical  
-- 25 Serial No / number / n  
-- 25 difíciles (reflejo, poca luz, ángulo, suciedad)
-
-**Total ≥ 100.** Preferir fotos de campo, no solo condiciones ideales.
-
-## Privacidad
-
-No subir al remoto imágenes con datos personales sensibles sin acuerdo del responsable del proyecto.
+1. Analizar imagen en el piloto.  
+2. Revisar pasos 0–6.  
+3. Confirmar o corregir.  
+4. La fila queda lista para `scripts/evaluate_ocr.py` (Fase 1).

@@ -1,33 +1,36 @@
 # ProcesoImagen
 
-Sistema web de reconocimiento OCR de códigos de equipos (`ZGRU…` y etiquetas *Serial No*).
+OCR de códigos de equipos con **validación humana** antes de reglas de negocio.
 
-- Requisitos y arquitectura: [`contexto.md`](contexto.md)
-- Ciclo por fases y gates: [`procesos_fases.md`](procesos_fases.md)
-- Convenciones: [`docs/convenciones.md`](docs/convenciones.md)
+- Requisitos: [`contexto.md`](contexto.md)
+- Ciclo por fases: [`procesos_fases.md`](procesos_fases.md)
+- **Piloto HITL 0.5:** [`previo.md`](previo.md)
+
+## Estado: Fase 0.5 (intervención humana)
+
+1. Sube una foto  
+2. Ves **todos** los pasos del preprocess/OCR  
+3. Confirmas o corriges el texto  
+4. Eso alimenta `dataset/` (Fase 0) con data ya corregida  
+
+### Arranque
+
+```bash
+cd backend
+source .venv/bin/activate
+export STORAGE_PATH=../storage DATASET_PATH=../dataset
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+Abrir **http://localhost:8000/ui/**
+
+| Recurso | URL |
+|---|---|
+| Interfaz piloto | http://localhost:8000/ui/ |
+| Swagger | http://localhost:8000/docs |
+| Dataset | `dataset/ground_truth.csv` + `dataset/images/` |
+| Feedback log | `dataset/feedback.jsonl` |
 
 ## Stack
 
-FastAPI · PaddleOCR (Fase 1) · OpenCV · PostgreSQL · React + Vite · Docker Compose
-
-## Arranque (Fase 0)
-
-```bash
-cp .env.example .env
-docker compose up --build
-```
-
-| Servicio | URL |
-|---|---|
-| API + Swagger | http://localhost:8000/docs |
-| Health | http://localhost:8000/api/health |
-| Frontend | http://localhost:5173 |
-| PostgreSQL | localhost:5432 (`procesoimagen` / `procesoimagen`) |
-
-## Estado
-
-**Fase 0 en curso:** entorno y scaffold listos. Pendiente recolectar ≥100 fotos etiquetadas en `dataset/`.
-
-## Siguiente paso
-
-Ver gate de Fase 0 y plan de Fase 1 en [`procesos_fases.md`](procesos_fases.md).
+FastAPI · OpenCV · RapidOCR · React (opcional) · PostgreSQL (Fase 2+) · Docker Compose

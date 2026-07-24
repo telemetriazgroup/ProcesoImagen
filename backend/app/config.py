@@ -13,8 +13,9 @@ class Settings(BaseSettings):
         "postgresql+psycopg://procesoimagen:procesoimagen@localhost:5432/procesoimagen"
     )
     storage_path: str = "./storage"
+    dataset_path: str = "../dataset"
     max_upload_mb: int = 15
-    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
+    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000"
 
     @property
     def cors_origin_list(self) -> list[str]:

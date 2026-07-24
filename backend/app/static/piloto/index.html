@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Piloto 0.5 — Validación humana</title>
+    <link rel="stylesheet" href="/ui/styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <header class="brand">
+        <p class="eyebrow">Fase 0.5 · intervención humana</p>
+        <h1>ProcesoImagen</h1>
+        <p class="lead">
+          Revisa cada paso del OCR, confirma o corrige el texto, y alimenta el
+          dataset de Fase 0 con datos ya validados.
+        </p>
+        <p class="pill" id="health">API: …</p>
+      </header>
+
+      <section class="metrics" id="metrics">
+        <h2>Confianza del sistema</h2>
+        <div class="metric-grid">
+          <div><span id="m-total">0</span><label>Validados</label></div>
+          <div><span id="m-acierto">—</span><label>Acierto OCR</label></div>
+          <div><span id="m-corr">0</span><label>Correcciones</label></div>
+          <div><span id="m-conf">—</span><label>Confianza media</label></div>
+        </div>
+      </section>
+
+      <form id="upload-form" class="upload">
+        <label class="file-label">
+          <span>1. Sube o captura una imagen</span>
+          <input id="file" type="file" accept="image/*" capture="environment" required />
+        </label>
+        <button type="submit" id="btn-analyze">Analizar paso a paso</button>
+      </form>
+      <p class="error" id="error" hidden></p>
+
+      <section id="workspace" class="workspace" hidden>
+        <div class="steps-all" id="steps"></div>
+
+        <aside class="validate-panel">
+          <h2>2. Validar reconocimiento</h2>
+          <p class="hint">
+            Mira el overlay (paso 5/6). Si el texto propuesto no es el código del
+            equipo, corrígelo. Al guardar, la imagen entra al dataset Fase 0.
+          </p>
+
+          <label>
+            Código propuesto (OCR)
+            <input id="codigo-ocr" type="text" readonly />
+          </label>
+          <p class="conf-line">Confianza OCR: <strong id="conf-ocr">—</strong></p>
+
+          <label>
+            Código correcto (humano)
+            <input id="codigo-ok" type="text" required placeholder="Escribe o confirma el código" />
+          </label>
+
+          <div class="row">
+            <label>
+              Tipo
+              <select id="tipo">
+                <option value="OTRO">OTRO</option>
+                <option value="ZGRU">ZGRU</option>
+                <option value="SERIAL">SERIAL</option>
+                <option value="MANUAL">MANUAL</option>
+              </select>
+            </label>
+            <label>
+              Orientación
+              <select id="orientacion">
+                <option value="n/a">n/a</option>
+                <option value="horizontal">horizontal</option>
+                <option value="vertical">vertical</option>
+              </select>
+            </label>
+            <label>
+              Dificultad
+              <select id="dificultad">
+                <option value="normal">normal</option>
+                <option value="dificil">dificil</option>
+              </select>
+            </label>
+          </div>
+
+          <label>
+            Notas
+            <textarea id="notas" rows="2" placeholder="Reflejo, ángulo, OCR confunde O/0…"></textarea>
+          </label>
+
+          <div class="actions">
+            <button type="button" id="btn-confirm" class="primary">
+              Confirmar propuesto
+            </button>
+            <button type="button" id="btn-save" class="secondary">
+              Guardar corrección
+            </button>
+          </div>
+          <p class="ok" id="save-msg" hidden></p>
+
+          <div class="blocks" id="blocks"></div>
+        </aside>
+      </section>
+
+      <section class="history">
+        <h2>3. Dataset corregido (Fase 0)</h2>
+        <p class="hint">
+          Validaciones humanas listas para Fase 1. Usa <strong>Editar</strong> para
+          corregir una prueba ya hecha.
+        </p>
+        <div id="history-list" class="history-list"></div>
+      </section>
+    </main>
+
+    <dialog id="edit-dialog" class="edit-dialog">
+      <form method="dialog" id="edit-form" class="edit-form">
+        <h2>Editar prueba</h2>
+        <p class="hint" id="edit-meta">—</p>
+        <img id="edit-preview" alt="Vista de la prueba" />
+
+        <label>
+          Código OCR (solo lectura)
+          <input id="edit-codigo-ocr" type="text" readonly />
+        </label>
+        <label>
+          Código correcto
+          <input id="edit-codigo-ok" type="text" required />
+        </label>
+        <div class="row">
+          <label>
+            Tipo
+            <select id="edit-tipo">
+              <option value="OTRO">OTRO</option>
+              <option value="ZGRU">ZGRU</option>
+              <option value="SERIAL">SERIAL</option>
+              <option value="MANUAL">MANUAL</option>
+            </select>
+          </label>
+          <label>
+            Orientación
+            <select id="edit-orientacion">
+              <option value="n/a">n/a</option>
+              <option value="horizontal">horizontal</option>
+              <option value="vertical">vertical</option>
+            </select>
+          </label>
+          <label>
+            Dificultad
+            <select id="edit-dificultad">
+              <option value="normal">normal</option>
+              <option value="dificil">dificil</option>
+            </select>
+          </label>
+        </div>
+        <label>
+          Notas
+          <textarea id="edit-notas" rows="2"></textarea>
+        </label>
+
+        <div class="actions edit-actions">
+          <button type="submit" class="primary" id="btn-edit-save">Guardar cambios</button>
+          <button type="button" class="secondary" id="btn-edit-cancel">Cancelar</button>
+          <button type="button" class="danger" id="btn-edit-delete">Eliminar</button>
+        </div>
+        <p class="error" id="edit-error" hidden></p>
+      </form>
+    </dialog>
+
+    <script src="/ui/app.js"></script>
+  </body>
+</html>

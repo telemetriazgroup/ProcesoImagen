@@ -3,7 +3,7 @@
 **Versión:** 1.0  
 **Fecha:** 24 julio 2026  
 **Fuente de requisitos:** `contexto.md`  
-**Estado actual:** Fase 0 en curso
+**Estado actual:** Fase 0.5 (piloto paso a paso) en curso — ver `previo.md`
 
 ---
 
@@ -106,16 +106,16 @@ Ejemplo: `feat(ocr): regla Serial No con bloques adyacentes`.
 ## 5. Ciclo de desarrollo
 
 ```
-Fase 0 → Fase 1 → Fase 2 → Fase 3 → Fase 4 → Fase 5
- Prep     OCR+reglas  API+BD    Frontend   Piloto    Producción
- 1 sem    2–3 sem     1–2 sem   2 sem      2 sem     1 sem
+Fase 0 → Fase 0.5 → Fase 1 → Fase 2 → Fase 3 → Fase 4 → Fase 5
+ Prep     Piloto OCR   OCR+reglas  API+BD   Frontend  Piloto campo  Prod
+ 1 sem    paralelo     2–3 sem     1–2 sem  2 sem     2 sem         1 sem
 ```
 
-Cada flecha = gate aprobado.
+Cada flecha = gate aprobado. La **0.5** puede avanzar en paralelo a la recolección del dataset de la Fase 0.
 
 ---
 
-### FASE 0 — Preparación y dataset *(en curso)*
+### FASE 0 — Preparación y dataset
 
 **Duración:** 1 semana  
 **Objetivo:** entorno reproducible + ground truth para medir OCR.
@@ -145,6 +145,29 @@ Cada flecha = gate aprobado.
 - [ ] Convenciones documentadas y estructura de carpetas estable
 
 **Riesgo:** sin fotos reales de campo, las métricas de Fase 1 no sirven.
+
+---
+
+### FASE 0.5 — Piloto HITL *(en curso)*
+
+**Duración:** días / 1 semana (en paralelo / alimenta el dataset)  
+**Documento detallado:** [`previo.md`](previo.md)  
+**Objetivo:** ver **todos** los pasos, confirmar/corregir el texto con humano, y **escribir el dataset Fase 0** ya corregido.
+
+| # | Actividad | Entregable |
+|---|---|---|
+| 0.5.1 | Pipeline OpenCV + OCR paso a paso | `piloto_pipeline.py` |
+| 0.5.2 | UI `/ui` + React: pasos + panel validación | `static/piloto`, `frontend` |
+| 0.5.3 | `POST /api/piloto/validar` → ground truth | `services/feedback.py` |
+| 0.5.4 | Métricas acierto OCR / correcciones | `/api/piloto/metricas` |
+
+**Gate Fase 0.5:**
+
+- [x] UI muestra todos los pasos + confirmación/corrección
+- [x] Validación humana alimenta `dataset/ground_truth.csv`
+- [ ] ≥5 (ideal ≥25) validaciones reales
+- [ ] Limitaciones en bitácora de `previo.md`
+- [ ] Decisión motor OCR para Fase 1
 
 ---
 
@@ -247,6 +270,7 @@ HTTPS, respaldos BD/imágenes, monitoreo, manuales (usuario + operación + técn
 | Fase | Semanas | Entregable clave | Gate |
 |---|---|---|---|
 | 0 Preparación | 1 | Entorno + dataset | Compose + ground truth |
+| 0.5 Piloto algoritmo | ~1 (paralelo) | Pipeline paso a paso | Números legibles en pruebas |
 | 1 OCR y reglas | 2–3 | Motor + evaluación | ≥85% precisión |
 | 2 API y BD | 1–2 | REST + persistencia | E2E API + CI |
 | 3 Frontend | 2 | App responsive | Usuarios en móvil |
@@ -293,7 +317,8 @@ Guardar `codigo_ocr` y `codigo` permite medir precisión real en piloto/producci
 
 | Fecha | Fase | Avance |
 |---|---|---|
-| 2026-07-24 | 0 | Creado `procesos_fases.md`. Scaffold: Docker Compose (api+db+frontend), FastAPI `/api/health`, React/Vite mínimo, `dataset/ground_truth.csv`, `docs/convenciones.md`. Pendiente: ≥100 fotos reales etiquetadas. |
+| 2026-07-24 | 0 | Scaffold Compose, FastAPI health, frontend, dataset plantilla, convenciones. |
+| 2026-07-24 | 0.5 | HITL: UI `/ui` con todos los pasos, confirmar/corregir, métricas, sync a `ground_truth.csv` + `feedback.jsonl`. |
 
 ### Checklist operativo Fase 0
 
@@ -303,6 +328,14 @@ Guardar `codigo_ocr` y `codigo` permite medir precisión real en piloto/producci
 - [x] Plantilla dataset + convenciones
 - [ ] Recolección y etiquetado ≥100 imágenes *(equipo de campo)*
 - [ ] Verificar `docker compose up --build` en la máquina de desarrollo *(pendiente de ejecutar en host)*
+
+### Checklist operativo Fase 0.5
+
+- [x] Documentar en `previo.md`
+- [x] Pipeline + API + UI HITL (`/ui`)
+- [x] Feedback → dataset Fase 0
+- [ ] Probar con imágenes reales del usuario
+- [ ] Cerrar gate 0.5 y pasar a Fase 1
 
 ---
 

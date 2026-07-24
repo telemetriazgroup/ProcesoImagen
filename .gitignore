@@ -10,8 +10,10 @@ backend/.venv/
 .ruff_cache/
 storage/originals/*
 storage/thumbs/*
+storage/piloto/*
 !storage/originals/.gitkeep
 !storage/thumbs/.gitkeep
+!storage/piloto/.gitkeep
 dataset/images/*
 !dataset/images/.gitkeep
 node_modules/

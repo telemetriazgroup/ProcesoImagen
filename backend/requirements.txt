@@ -8,7 +8,12 @@ alembic==1.15.2
 httpx==0.28.1
 pytest==8.3.5
 pillow==11.2.1
-# Fase 1 — descomentar al integrar OCR:
-# opencv-python-headless==4.11.0.86
+# Fase 0.5 — piloto paso a paso
+opencv-python-headless==4.11.0.86
+numpy==2.2.5
+rapidocr-onnxruntime==1.4.4
+# Fase 1 (opcional, motor más pesado):
 # paddlepaddle==3.0.0
 # paddleocr==2.10.0
+onnxruntime==1.21.1
+
