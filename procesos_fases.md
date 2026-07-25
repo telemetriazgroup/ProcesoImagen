@@ -3,7 +3,7 @@
 **Versión:** 1.0  
 **Fecha:** 24 julio 2026  
 **Fuente de requisitos:** `contexto.md`  
-**Estado actual:** Fase 0.5 (piloto paso a paso) en curso — ver `previo.md`
+**Estado actual:** Fase 1 en curso — ver `docs/fase1.md` · dataset HITL listo (111 imgs)
 
 ---
 
@@ -148,51 +148,50 @@ Cada flecha = gate aprobado. La **0.5** puede avanzar en paralelo a la recolecci
 
 ---
 
-### FASE 0.5 — Piloto HITL *(en curso)*
+### FASE 0.5 — Piloto HITL *(cerrada operativamente)*
 
-**Duración:** días / 1 semana (en paralelo / alimenta el dataset)  
-**Documento detallado:** [`previo.md`](previo.md)  
-**Objetivo:** ver **todos** los pasos, confirmar/corregir el texto con humano, y **escribir el dataset Fase 0** ya corregido.
-
-| # | Actividad | Entregable |
-|---|---|---|
-| 0.5.1 | Pipeline OpenCV + OCR paso a paso | `piloto_pipeline.py` |
-| 0.5.2 | UI `/ui` + React: pasos + panel validación | `static/piloto`, `frontend` |
-| 0.5.3 | `POST /api/piloto/validar` → ground truth | `services/feedback.py` |
-| 0.5.4 | Métricas acierto OCR / correcciones | `/api/piloto/metricas` |
+**Documento:** [`previo.md`](previo.md)  
+Dataset validado: **111 imágenes** en `ground_truth.csv`.
 
 **Gate Fase 0.5:**
 
 - [x] UI muestra todos los pasos + confirmación/corrección
 - [x] Validación humana alimenta `dataset/ground_truth.csv`
-- [ ] ≥5 (ideal ≥25) validaciones reales
-- [ ] Limitaciones en bitácora de `previo.md`
-- [ ] Decisión motor OCR para Fase 1
+- [x] ≥25 validaciones reales (111)
+- [x] Motor OCR Fase 1: RapidOCR + reglas (PaddleOCR opcional después)
+- [ ] Bitácora cualitativa completa en `previo.md` *(continua en paralelo)*
 
 ---
 
-### FASE 1 — Núcleo OCR y motor de reglas
+### FASE 1 — Núcleo OCR y motor de reglas *(en curso)*
 
 **Duración:** 2–3 semanas  
+**Documento:** [`docs/fase1.md`](docs/fase1.md)  
 **Objetivo:** dada una imagen → código correcto (sin UI completa).
 
-| # | Actividad |
-|---|---|
-| 1.1 | Preprocesamiento OpenCV configurable (CLAHE, skew, resize) |
-| 1.2 | Integración PaddleOCR → bloques `{texto, bbox, confianza, ángulo}` |
-| 1.3 | Regla A: `ZGRU[\s\-]?\d+` + normalización O/0, I/1, etc. |
-| 1.4 | Regla B: etiqueta Serial + valor (mismo bloque o adyacente) |
-| 1.5 | Fallback rotación 90° / 270° |
-| 1.6 | Script `scripts/evaluate_ocr.py` + reporte en `docs/reportes/` |
-| 1.7 | `POST /api/ocr` (propuesta, sin persistir registro) |
+| # | Actividad | Estado |
+|---|---|---|
+| 1.1 | Preprocesamiento OpenCV configurable | Hecho |
+| 1.2 | OCR RapidOCR → bloques | Hecho |
+| 1.3 | Regla ZGRU + normalización | Hecho (iterar) |
+| 1.4 | Regla Serial + prefijos CIM/E0/MMAU/MNBU | Hecho (iterar) |
+| 1.5 | Fallback rotación 90° / 270° | Hecho |
+| 1.6 | `scripts/evaluate_ocr.py` + reportes | Hecho |
+| 1.7 | `POST /api/ocr` | Hecho |
+
+**Eval iteración 1:** 56.8% global.  
+**Eval iteración 2:** 64.0% global.  
+**Eval iteración 3 (multipaso + borde + check digit):** 70.3% (78/111).  
+**Eval iteración 4 (Serial→derecha ampliado + columna vertical×7):** **78.4%** (87/111) · SERIAL **88.9%** · OTRO **72.7%** · horizontal **90%** · vertical **64.7%** · ZGRU **53.8%**. Gate 85% **no cumplido**.  
+Algoritmo congelado en `docs/fase1.md` antes de ampliar/limpiar dataset.
 
 **Gate Fase 1:**
 
 - [ ] Precisión ≥ 85% dataset completo (exact match)
-- [ ] ≥ 90% en horizontal y serial
-- [ ] ≤ 5 s/imagen en servidor objetivo
-- [ ] Reporte con un comando; fallos con causa documentada
-- [ ] Si no se alcanza tras 2 iteraciones → decidir Plan B OCR
+- [x] ≥ 90% en horizontal (iter 4); serial 88.9% (cerca)
+- [ ] ≤ 5 s/imagen (p95 ~14 s en iter 4 — optimizar)
+- [x] Reporte con un comando; fallos listados
+- [ ] Si no se alcanza tras iteraciones → decidir Plan B OCR
 
 ---
 
@@ -318,30 +317,27 @@ Guardar `codigo_ocr` y `codigo` permite medir precisión real en piloto/producci
 | Fecha | Fase | Avance |
 |---|---|---|
 | 2026-07-24 | 0 | Scaffold Compose, FastAPI health, frontend, dataset plantilla, convenciones. |
-| 2026-07-24 | 0.5 | HITL: UI `/ui` con todos los pasos, confirmar/corregir, métricas, sync a `ground_truth.csv` + `feedback.jsonl`. |
+| 2026-07-24 | 0.5 | HITL + 111 imágenes validadas en dataset. |
+| 2026-07-24 | 1 | Iteración 3: multipaso/borde/check-digit → **70.3%** global. |
+| 2026-07-24 | 1 | Iteración 4 guardada: Serial derecha + vertical×7 → **78.4%** (SERIAL 88.9%, horiz. 90%). Dataset se ampliará/limpiará a continuación. |
 
-### Checklist operativo Fase 0
+### Checklist operativo Fase 0 / 0.5
 
-- [x] Documentar ciclo en `procesos_fases.md`
-- [x] Scaffold backend + Docker Compose
-- [x] Scaffold frontend
-- [x] Plantilla dataset + convenciones
-- [ ] Recolección y etiquetado ≥100 imágenes *(equipo de campo)*
-- [ ] Verificar `docker compose up --build` en la máquina de desarrollo *(pendiente de ejecutar en host)*
+- [x] Entorno + HITL + dataset ≥100
 
-### Checklist operativo Fase 0.5
+### Checklist operativo Fase 1
 
-- [x] Documentar en `previo.md`
-- [x] Pipeline + API + UI HITL (`/ui`)
-- [x] Feedback → dataset Fase 0
-- [ ] Probar con imágenes reales del usuario
-- [ ] Cerrar gate 0.5 y pasar a Fase 1
+- [x] Preprocess + OCR + reglas + API + evaluate
+- [x] Iteración 4 (geometría Serial/vertical) guardada como baseline
+- [ ] Limpiar/ampliar GT y re-evaluar
+- [ ] Cumplir gate ≥85%
+- [ ] Decidir Plan B si el gate sigue fallando
 
 ---
 
-## 10. Cómo continuar en la siguiente sesión
+## 10. Cómo continuar
 
-1. Completar etiquetado del dataset (bloqueante para gate Fase 0).  
-2. Al cerrar Fase 0, abrir `fase-1/nucleo-ocr` e implementar preprocess + PaddleOCR + reglas.  
-3. No avanzar a frontend completo (Fase 3) hasta API + persistencia (Fase 2).  
-4. Actualizar la sección **9. Estado** al cerrar cada gate.
+1. Revisar `docs/reportes/eval_fase1_latest.md` (48 fallos).  
+2. Iterar reglas/preprocess (prioridad: vertical + último dígito).  
+3. Re-ejecutar `python scripts/evaluate_ocr.py`.  
+4. Al cumplir gate → Fase 2 (API completa + persistencia).

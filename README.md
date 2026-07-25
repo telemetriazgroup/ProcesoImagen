@@ -1,19 +1,18 @@
 # ProcesoImagen
 
-OCR de códigos de equipos con **validación humana** antes de reglas de negocio.
+OCR de códigos de equipos con validación humana (Fase 0.5) y motor de reglas (Fase 1).
 
 - Requisitos: [`contexto.md`](contexto.md)
-- Ciclo por fases: [`procesos_fases.md`](procesos_fases.md)
-- **Piloto HITL 0.5:** [`previo.md`](previo.md)
+- Ciclo: [`procesos_fases.md`](procesos_fases.md)
+- Piloto HITL: [`previo.md`](previo.md)
+- Fase 1: [`docs/fase1.md`](docs/fase1.md)
 
-## Estado: Fase 0.5 (intervención humana)
+## Estado: Fase 1
 
-1. Sube una foto  
-2. Ves **todos** los pasos del preprocess/OCR  
-3. Confirmas o corriges el texto  
-4. Eso alimenta `dataset/` (Fase 0) con data ya corregida  
+Dataset: **111** imágenes validadas.  
+Primera evaluación: **56.8%** exact match (gate 85% en iteración).
 
-### Arranque
+### Arranque API
 
 ```bash
 cd backend
@@ -22,15 +21,17 @@ export STORAGE_PATH=../storage DATASET_PATH=../dataset
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Abrir **http://localhost:8000/ui/**
-
 | Recurso | URL |
 |---|---|
-| Interfaz piloto | http://localhost:8000/ui/ |
+| UI HITL | http://localhost:8000/ui/ |
+| OCR Fase 1 | `POST /api/ocr` |
 | Swagger | http://localhost:8000/docs |
-| Dataset | `dataset/ground_truth.csv` + `dataset/images/` |
-| Feedback log | `dataset/feedback.jsonl` |
 
-## Stack
+### Evaluar precisión
 
-FastAPI · OpenCV · RapidOCR · React (opcional) · PostgreSQL (Fase 2+) · Docker Compose
+```bash
+cd backend && source .venv/bin/activate
+python ../scripts/evaluate_ocr.py
+```
+
+Reporte: `docs/reportes/eval_fase1_latest.md`
