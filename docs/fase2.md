@@ -46,7 +46,7 @@ Convertir el núcleo OCR en servicio con PostgreSQL: subir imagen → propuesta 
 docker compose up -d db
 cd backend && source .venv/bin/activate
 alembic upgrade head
-uvicorn app.main:app --reload --port 8000
-# Swagger: http://localhost:8000/docs
+uvicorn app.main:app --reload --port 8300
+# Swagger: http://localhost:8300/docs
 pytest -q
 ```

@@ -354,6 +354,6 @@ Guardar `codigo_ocr` y `codigo` permite medir precisión real en piloto/producci
 
 ## 10. Cómo continuar
 
-1. Probar app campo en http://localhost:5173 con API en :8000.  
+1. Probar app campo en http://localhost:5273 con API en :8300.  
 2. Validar gate Fase 3 en teléfonos reales.  
 3. Al cumplir gate → Fase 4 (piloto en condiciones reales).

@@ -10,13 +10,13 @@ OCR de códigos de equipos: HITL (0.5), motor de reglas (1), API + BD (2), app d
 
 ## Estado: Fase 3
 
-App móvil-first en Vite (puerto **5173**): captura → confirmar código → listado.
+App móvil-first en Vite (puerto **5273**): captura → confirmar código → listado.
 
 | App | URL |
 |---|---|
-| **Campo (Fase 3)** | http://localhost:5173 |
-| HITL dataset (Fase 0.5) | http://localhost:8000/ui/ |
-| Swagger API | http://localhost:8000/docs |
+| **Campo (Fase 3)** | http://localhost:5273 |
+| HITL dataset (Fase 0.5) | http://localhost:8300/ui/ |
+| Swagger API | http://localhost:8300/docs |
 
 ### Arranque
 
@@ -38,7 +38,7 @@ docker compose up -d db
 cd backend && source .venv/bin/activate
 alembic upgrade head
 export STORAGE_PATH=../storage DATASET_PATH=../dataset
-uvicorn app.main:app --reload --port 8000
+uvicorn app.main:app --reload --port 8300
 ```
 
 ### Flujo de campo

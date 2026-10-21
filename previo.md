@@ -48,9 +48,9 @@ Ambas acciones copian la imagen a `dataset/images/` y actualizan `ground_truth.c
 
 ## 3. Interfaz
 
-**URL principal (sin Node):** http://localhost:8000/ui/
+**URL principal (sin Node):** http://localhost:8300/ui/
 
-También: frontend React en `:5173` (si Compose/Node) — misma API.
+También: frontend React en `:5273` (si Compose/Node) — misma API.
 
 La UI muestra:
 
@@ -140,10 +140,10 @@ cd backend
 source .venv/bin/activate
 export STORAGE_PATH=../storage
 export DATASET_PATH=../dataset
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8300
 ```
 
-Abrir: **http://localhost:8000/ui/**
+Abrir: **http://localhost:8300/ui/**
 
 ---
 
@@ -193,4 +193,4 @@ Abrir: **http://localhost:8000/ui/**
 cd backend
 source .venv/bin/activate
 export STORAGE_PATH=../storage DATASET_PATH=../dataset
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8300

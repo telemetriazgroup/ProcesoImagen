@@ -6,7 +6,7 @@ services:
       POSTGRES_PASSWORD: procesoimagen
       POSTGRES_DB: procesoimagen
     ports:
-      - "5432:5432"
+      - "5438:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -20,14 +20,14 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     ports:
-      - "8000:8000"
+      - "8300:8000"
     env_file:
       - .env
     environment:
       DATABASE_URL: postgresql+psycopg://procesoimagen:procesoimagen@db:5432/procesoimagen
       STORAGE_PATH: /app/storage
       DATASET_PATH: /app/dataset
-      CORS_ORIGINS: http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000
+      CORS_ORIGINS: http://localhost:5273,http://127.0.0.1:5273,http://localhost:8300
     volumes:
       - ./backend/app:/app/app
       - ./storage:/app/storage
@@ -41,9 +41,9 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
-      - "5173:5173"
+      - "5273:5273"
     environment:
-      VITE_API_URL: http://localhost:8000
+      VITE_API_URL: http://localhost:8300
     volumes:
       - ./frontend:/app
       - /app/node_modules

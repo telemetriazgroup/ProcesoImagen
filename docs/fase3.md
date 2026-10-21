@@ -17,7 +17,7 @@ Interfaz móvil-first para registrar equipos en campo: capturar foto → confirm
 | `/registros` | Listado, búsqueda y filtros | `GET /api/registros` |
 
 - Si `sin_deteccion` o confianza &lt; **0.85**, el campo de código arranca vacío (ingreso manual).
-- La UI HITL de dataset sigue en `http://localhost:8000/ui/` (no es esta app).
+- La UI HITL de dataset sigue en `http://localhost:8300/ui/` (no es esta app).
 
 ## Arranque
 
@@ -27,10 +27,10 @@ docker compose up -d db api
 
 # Frontend
 cd frontend && npm install && npm run dev
-# → http://localhost:5173
+# → http://localhost:5273
 ```
 
-`VITE_API_URL` (Compose) apunta a `http://localhost:8000`. En dev local, Vite hace proxy de `/api`.
+`VITE_API_URL` (Compose) apunta a `http://localhost:8300`. En dev local, Vite hace proxy de `/api`.
 
 ## Gate (validación humana)
 

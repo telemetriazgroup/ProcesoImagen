@@ -10,12 +10,12 @@ class Settings(BaseSettings):
     app_env: str = "development"
     api_prefix: str = "/api"
     database_url: str = (
-        "postgresql+psycopg://procesoimagen:procesoimagen@localhost:5432/procesoimagen"
+        "postgresql+psycopg://procesoimagen:procesoimagen@localhost:5438/procesoimagen"
     )
     storage_path: str = "./storage"
     dataset_path: str = "../dataset"
     max_upload_mb: int = 15
-    cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:8000"
+    cors_origins: str = "http://localhost:5273,http://127.0.0.1:5273,http://localhost:8300"
 
     @property
     def cors_origin_list(self) -> list[str]:

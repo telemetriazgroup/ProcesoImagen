@@ -66,5 +66,5 @@ Tras guardar este algoritmo:
 ## API
 
 ```bash
-curl -F "file=@foto.jpg" http://localhost:8000/api/ocr
+curl -F "file=@foto.jpg" http://localhost:8300/api/ocr
 ```

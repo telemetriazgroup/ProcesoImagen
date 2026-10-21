@@ -17,7 +17,7 @@ TEST_DB = os.getenv(
     "DATABASE_URL_TEST",
     os.getenv(
         "DATABASE_URL",
-        "postgresql+psycopg://procesoimagen:procesoimagen@localhost:5432/procesoimagen",
+        "postgresql+psycopg://procesoimagen:procesoimagen@localhost:5438/procesoimagen",
     ),
 )
 
