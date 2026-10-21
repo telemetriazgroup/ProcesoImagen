@@ -22,6 +22,7 @@ from app.core.rules import (
     _SERIAL_INLINE_RE,
     extract_chip,
     extract_code,
+    extract_modulo,
     extract_serial_from_right_roi,
     extract_seven_from_vertical_roi,
 )
@@ -182,6 +183,79 @@ def detect_chip(
         "observaciones": "\n".join(pasos),
         "numeros": list(cand.get("numeros") or []) if cand else [],
         "fragmentos": list(cand.get("fragmentos") or []) if cand else [],
+    }
+
+
+def detect_modulo(
+    image_bytes: bytes,
+    *,
+    try_rotations: bool = True,
+) -> dict[str, Any]:
+    """Etiqueta negra ZTRACK-V2. El SN es el código. El IMEI queda en la lista de la señal."""
+    original = resize_max(decode_image(image_bytes), max_side=1800)
+    pasos: list[str] = ["Caso MÓDULO: etiqueta ZTRACK-V2. El SN busca el equipo y el IMEI queda para la señal."]
+    sn = ""
+    imei = ""
+    modelo = ""
+    numeros: list[str] = []
+    sns: list[str] = []
+    blocks: list[dict[str, Any]] = []
+    confianza = None
+    bbox: list[Any] = []
+    fuente = None
+    orientacion = None
+    rotacion = 0
+    for degrees in (0, 90, 270) if try_rotations else (0,):
+        imagen = original if degrees == 0 else rotate_bgr(original, degrees)
+        leidos = _ocr_variants(imagen, ["default", "strong_clahe"])
+        cand = extract_modulo(leidos)
+        if not cand:
+            continue
+        blocks = _merge_blocks([blocks, leidos])
+        if cand.get("sn") and not sn:
+            sn = str(cand["sn"])
+            rotacion = degrees
+        if cand.get("imei") and not imei:
+            imei = str(cand["imei"])
+            rotacion = degrees
+        if cand.get("modelo") and not modelo:
+            modelo = str(cand["modelo"])
+        for valor in cand.get("numeros") or []:
+            if valor not in numeros:
+                numeros.append(str(valor))
+        for valor in cand.get("sns") or []:
+            if valor not in sns:
+                sns.append(str(valor))
+        confianza = cand.get("confianza")
+        bbox = cand.get("bbox") or bbox
+        fuente = cand.get("fuente")
+        orientacion = cand.get("orientacion")
+        pasos.append(f"   → rot={degrees}: SN={cand.get('sn') or '—'} IMEI={cand.get('imei') or '—'}")
+        if sn and imei:
+            break
+    if sn or imei:
+        pasos.append(f"Resultado MÓDULO: SN={sn or '—'} IMEI={imei or '—'}")
+    else:
+        pasos.append("Sin SN ni IMEI de módulo")
+    return {
+        "codigo": sn or None,
+        "tipo": "MODULO",
+        "confianza": confianza,
+        "orientacion": orientacion,
+        "bbox": bbox,
+        "fuente": fuente if sn or imei else None,
+        "rotacion": rotacion,
+        "bloques": blocks,
+        "sin_deteccion": not bool(sn or imei),
+        "desde_borde": False,
+        "roi": "modulo",
+        "pasos": pasos,
+        "observaciones": "\n".join(pasos),
+        "sn": sn,
+        "imei": imei,
+        "modelo": modelo,
+        "numeros": numeros,
+        "sns": sns,
     }
 
 

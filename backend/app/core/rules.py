@@ -894,6 +894,100 @@ def extract_chip(blocks: list[dict[str, Any]]) -> dict[str, Any] | None:
     return candidato
 
 
+_MODELO_MODULO = re.compile(r"ZTRACK\s*-?\s*V\s*2", re.I)
+_SN_MODULO = re.compile(r"005010\d{12,16}")
+_IMEI_MODULO = re.compile(r"86\d{13}")
+
+
+def _anotar_unico(lista: list[str], valor: str) -> None:
+    if valor and valor not in lista:
+        lista.append(valor)
+
+
+def _sn_de(valor: str) -> str:
+    digitos = _only_digits(valor)
+    hallazgo = _SN_MODULO.search(digitos)
+    if not hallazgo:
+        return ""
+    sn = hallazgo.group(0)
+    return sn if 18 <= len(sn) <= 22 else ""
+
+
+def _imei_de(valor: str) -> str:
+    digitos = _only_digits(valor)
+    if digitos.startswith("005010") or digitos.startswith("8951"):
+        return ""
+    hallazgo = _IMEI_MODULO.search(digitos)
+    if not hallazgo:
+        return ""
+    imei = hallazgo.group(0)
+    return imei if len(imei) == 15 and not imei.startswith("8951") else ""
+
+
+def extract_modulo(blocks: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """Etiqueta ZTRACK-V2. El SN busca el módulo. El IMEI queda para la señal."""
+    if not blocks:
+        return None
+    textos = [str(bloque.get("texto") or "") for bloque in blocks]
+    junto = "\n".join(textos)
+    modelo = "ZTRACK-V2" if _MODELO_MODULO.search(junto) else ""
+    sns: list[str] = []
+    imeis: list[str] = []
+
+    for hallazgo in re.finditer(r"SN[:\s.\-]*([0-9OILSB]{16,24})", junto, re.I):
+        _anotar_unico(sns, _sn_de(hallazgo.group(1)))
+    for hallazgo in re.finditer(r"IMEI[:\s.\-]*([0-9OILSB]{14,18})", junto, re.I):
+        _anotar_unico(imeis, _imei_de(hallazgo.group(1)))
+    for bloque in blocks:
+        bruto = str(bloque.get("texto") or "")
+        _anotar_unico(sns, _sn_de(bruto))
+        _anotar_unico(imeis, _imei_de(bruto))
+
+    partes = _bloques_de_digitos(blocks)
+    for indice, (digitos, _bloque) in enumerate(partes):
+        if digitos.startswith("005010") and len(digitos) < 18:
+            junto_sn = digitos
+            for siguiente, _origen in partes[indice + 1 :]:
+                if len(junto_sn) >= 20 or siguiente.startswith(("86", "8951", "115")):
+                    break
+                if len(junto_sn) + len(siguiente) > 22:
+                    break
+                junto_sn += siguiente
+            _anotar_unico(sns, _sn_de(junto_sn))
+        if digitos.startswith("86") and len(digitos) < 15:
+            junto_imei = digitos
+            for siguiente, _origen in partes[indice + 1 :]:
+                if len(junto_imei) >= 15 or siguiente.startswith(("005", "8951")):
+                    break
+                if len(junto_imei) + len(siguiente) > 15:
+                    break
+                junto_imei += siguiente
+            _anotar_unico(imeis, _imei_de(junto_imei))
+
+    sns = [sn for sn in sns if sn]
+    imeis = [imei for imei in imeis if imei]
+    if not sns and not imeis:
+        return None
+    sn = sns[0] if sns else ""
+    imei = imeis[0] if imeis else ""
+    fuente = "regla_modulo_sn_imei" if sn and imei else "regla_modulo_sn" if sn else "regla_modulo_imei"
+    candidato = _candidate(
+        sn or imei,
+        "MODULO",
+        float(blocks[0].get("confianza") or 0.5),
+        blocks[0].get("bbox"),
+        fuente,
+        score=130 if sn and imei else 90,
+    )
+    candidato["codigo"] = sn or None
+    candidato["sn"] = sn
+    candidato["imei"] = imei
+    candidato["modelo"] = modelo
+    candidato["numeros"] = imeis
+    candidato["sns"] = sns
+    return candidato
+
+
 def extract_code(
     blocks: list[dict[str, Any]],
     *,

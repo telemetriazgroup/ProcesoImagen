@@ -170,6 +170,41 @@ def test_chip_recuadro_alai_sin_codigo_completo():
     assert r["fuente"] == "regla_chip_fragmento"
 
 
+def test_modulo_separa_sn_e_imei_y_deja_fuera_el_chip():
+    from app.core.rules import extract_modulo
+
+    r = extract_modulo([
+        _b("Model: ZTRACK-V2"),
+        _b("Input: DC9-36V"),
+        _b("IMEI: 869387065279656"),
+        _b("SN: 00501026082100005690"),
+        _b("Serial Param: 115200/N/8/1"),
+        _b("8951029078500034060"),
+    ])
+    assert r is not None
+    assert r["tipo"] == "MODULO"
+    assert r["codigo"] == "00501026082100005690"
+    assert r["sn"] == "00501026082100005690"
+    assert r["imei"] == "869387065279656"
+    assert r["modelo"] == "ZTRACK-V2"
+    assert r["numeros"] == ["869387065279656"]
+    assert "8951029078500034060" not in r["numeros"]
+
+
+def test_modulo_junta_sn_e_imei_partidos():
+    from app.core.rules import extract_modulo
+
+    r = extract_modulo([
+        _b("8693870653"),
+        _b("34402"),
+        _b("005010260821"),
+        _b("00008811"),
+    ])
+    assert r is not None
+    assert r["sn"] == "00501026082100008811"
+    assert r["imei"] == "869387065334402"
+
+
 def test_chip_suelto_partido():
     from app.core.rules import extract_chip
 
