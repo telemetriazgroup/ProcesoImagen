@@ -15,7 +15,10 @@ class Settings(BaseSettings):
     storage_path: str = "./storage"
     dataset_path: str = "../dataset"
     max_upload_mb: int = 15
-    cors_origins: str = "http://localhost:5273,http://127.0.0.1:5273,http://localhost:8300"
+    cors_origins: str = (
+        "http://localhost:5273,http://127.0.0.1:5273,http://localhost:8300,"
+        "http://161.132.53.51:5273,http://161.132.53.51:8300"
+    )
 
     @property
     def cors_origin_list(self) -> list[str]:

@@ -27,7 +27,7 @@ services:
       DATABASE_URL: postgresql+psycopg://procesoimagen:procesoimagen@db:5432/procesoimagen
       STORAGE_PATH: /app/storage
       DATASET_PATH: /app/dataset
-      CORS_ORIGINS: http://localhost:5273,http://127.0.0.1:5273,http://localhost:8300
+      # CORS_ORIGINS viene de .env (localhost + IP del servidor).
     volumes:
       - ./backend/app:/app/app
       - ./storage:/app/storage
@@ -42,8 +42,11 @@ services:
       dockerfile: Dockerfile
     ports:
       - "5273:5273"
+    env_file:
+      - .env
     environment:
-      VITE_API_URL: http://localhost:8300
+      # Debe ser alcanzable desde el navegador del usuario (IP/dominio del servidor).
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:8300}
     volumes:
       - ./frontend:/app
       - /app/node_modules
