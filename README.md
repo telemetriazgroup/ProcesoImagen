@@ -1,37 +1,60 @@
 # ProcesoImagen
 
-OCR de códigos de equipos con validación humana (Fase 0.5) y motor de reglas (Fase 1).
+OCR de códigos de equipos: HITL (0.5), motor de reglas (1), API + BD (2), app de campo (3).
 
 - Requisitos: [`contexto.md`](contexto.md)
 - Ciclo: [`procesos_fases.md`](procesos_fases.md)
-- Piloto HITL: [`previo.md`](previo.md)
-- Fase 1: [`docs/fase1.md`](docs/fase1.md)
+- Fase 1: [`docs/fase1.md`](docs/fase1.md) — gate **86.9%**
+- Fase 2: [`docs/fase2.md`](docs/fase2.md)
+- Fase 3: [`docs/fase3.md`](docs/fase3.md)
 
-## Estado: Fase 1
+## Estado: Fase 3
 
-Dataset: **111** imágenes validadas.  
-Primera evaluación: **56.8%** exact match (gate 85% en iteración).
+App móvil-first en Vite (puerto **5173**): captura → confirmar código → listado.
 
-### Arranque API
-
-```bash
-cd backend
-source .venv/bin/activate
-export STORAGE_PATH=../storage DATASET_PATH=../dataset
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-| Recurso | URL |
+| App | URL |
 |---|---|
-| UI HITL | http://localhost:8000/ui/ |
-| OCR Fase 1 | `POST /api/ocr` |
-| Swagger | http://localhost:8000/docs |
+| **Campo (Fase 3)** | http://localhost:5173 |
+| HITL dataset (Fase 0.5) | http://localhost:8000/ui/ |
+| Swagger API | http://localhost:8000/docs |
 
-### Evaluar precisión
+### Arranque
 
 ```bash
-cd backend && source .venv/bin/activate
-python ../scripts/evaluate_ocr.py
+cp .env.example .env
+docker compose up --build
 ```
 
-Reporte: `docs/reportes/eval_fase1_latest.md`
+Frontend local:
+
+```bash
+cd frontend && npm install && npm run dev
+```
+
+API local:
+
+```bash
+docker compose up -d db
+cd backend && source .venv/bin/activate
+alembic upgrade head
+export STORAGE_PATH=../storage DATASET_PATH=../dataset
+uvicorn app.main:app --reload --port 8000
+```
+
+### Flujo de campo
+
+1. Tomar foto / galería → `POST /api/imagenes`
+2. Confirmar o corregir código → `POST /api/registros`
+3. Ver listado en `/registros`
+
+### Tests API
+
+```bash
+cd backend && pytest -q
+```
+
+### Evaluar OCR
+
+```bash
+cd backend && python ../scripts/evaluate_ocr.py
+```

@@ -20,6 +20,7 @@ from app.core.roi import (
 )
 from app.core.rules import (
     _SERIAL_INLINE_RE,
+    extract_chip,
     extract_code,
     extract_serial_from_right_roi,
     extract_seven_from_vertical_roi,
@@ -139,6 +140,51 @@ def _consider(
     return best, meta
 
 
+def detect_chip(
+    image_bytes: bytes,
+    *,
+    try_rotations: bool = True,
+) -> dict[str, Any]:
+    """Lectura de IMEI cuando el pedido es de chip. No usa las reglas de ZGRU ni de serie."""
+    original = resize_max(decode_image(image_bytes), max_side=1800)
+    pasos: list[str] = ["Caso CHIP: IMEI de tarjeta o chip. ZGRU y serie no entran."]
+    blocks = _ocr_variants(original, ["default", "strong_clahe"])
+    cand = extract_chip(blocks)
+    rotacion = 0
+    completo = bool(cand and str(cand.get("codigo") or "").startswith("8951"))
+    if try_rotations and not completo:
+        pasos.append("Sin IMEI completo en horizontal; giro 90/270")
+        for degrees in (90, 270):
+            extra = _ocr_variants(rotate_bgr(original, degrees), ["default", "strong_clahe"])
+            blocks = _merge_blocks([blocks, extra])
+            cand = extract_chip(blocks)
+            rotacion = degrees
+            if cand and str(cand.get("codigo") or "").startswith("8951"):
+                pasos.append(f"   → rot={degrees}: {cand.get('codigo')}")
+                break
+    if cand and cand.get("codigo"):
+        pasos.append(f"Resultado CHIP: {cand.get('codigo')} · fuente={cand.get('fuente')}")
+    else:
+        pasos.append("Sin IMEI de chip")
+    return {
+        "codigo": cand.get("codigo") if cand else None,
+        "tipo": "CHIP",
+        "confianza": cand.get("confianza") if cand else None,
+        "orientacion": cand.get("orientacion") if cand else None,
+        "bbox": cand.get("bbox") if cand else [],
+        "fuente": cand.get("fuente") if cand else None,
+        "rotacion": rotacion,
+        "bloques": blocks,
+        "sin_deteccion": not bool(cand and cand.get("codigo")),
+        "desde_borde": False,
+        "roi": "chip",
+        "pasos": pasos,
+        "observaciones": "\n".join(pasos),
+        "numeros": list(cand.get("numeros") or []) if cand else [],
+        "fragmentos": list(cand.get("fragmentos") or []) if cand else [],
+    }
+
+
 def detect_code(
     image_bytes: bytes,
     *,
@@ -155,6 +201,7 @@ def detect_code(
     """
     _ = steps
     original = resize_max(decode_image(image_bytes), max_side=1800)
+    pasos: list[str] = ["Preprocess: resize max 1800px"]
 
     best: dict[str, Any] | None = None
     meta: dict[str, Any] = {
@@ -166,8 +213,13 @@ def detect_code(
     }
 
     # --- 1) Pasada horizontal global ---
+    pasos.append("1. OCR horizontal (default + strong_clahe)")
     blocks_h = _ocr_variants(original, ["default", "strong_clahe"])
     cand = extract_code(blocks_h, modo="horizontal")
+    if cand:
+        pasos.append(
+            f"   → candidato horizontal: {cand.get('codigo')} ({cand.get('fuente')})"
+        )
     best, meta = _consider(
         best,
         cand,
@@ -178,12 +230,16 @@ def detect_code(
     )
 
     # --- 2) Serial → línea horizontal → texto a la DERECHA (ampliado) ---
-    for label in find_serial_labels(blocks_h):
+    serial_labels = find_serial_labels(blocks_h)
+    if serial_labels:
+        pasos.append(f"2. Label Serial detectado ({len(serial_labels)}); ROI derecha ampliado")
+    for label in serial_labels:
         label_txt = str(label.get("texto") or "")
         # Si el valor ya viene inline ("Serial No CIM…"), no recortar a la derecha
         if _SERIAL_INLINE_RE.search(label_txt) and re.search(
             r"(?:CIM|E0|MMAU|MNBU|[A-Z]*\d{4,})", label_txt, re.I
         ):
+            pasos.append("   → valor inline en el mismo bloque Serial (sin ROI)")
             continue
         band = crop_right_of_serial(original, label)
         if band is None:
@@ -191,6 +247,10 @@ def detect_code(
         band_big = enlarge(band, scale=2.4)
         roi_blocks = _ocr_variants(band_big, ["strong_clahe", "default", "binary"])
         serial_cand = extract_serial_from_right_roi(roi_blocks)
+        if serial_cand:
+            pasos.append(
+                f"   → ROI Serial derecha: {serial_cand.get('codigo')}"
+            )
         best, meta = _consider(
             best,
             serial_cand,
@@ -208,8 +268,11 @@ def detect_code(
         and len(_digits_of(str(best.get("codigo") or ""))) == 7
         and float(best.get("confianza") or 0) >= 0.75
     )
+    zgru_labels = find_zgru_labels(blocks_h)
+    if zgru_labels and not have_zgru7:
+        pasos.append(f"3. Prefijo ZGRU ({len(zgru_labels)}); columna debajo ×7")
     if not have_zgru7:
-        for label in find_zgru_labels(blocks_h):
+        for label in zgru_labels:
             col = crop_below_zgru(original, label)
             if col is None:
                 continue
@@ -225,6 +288,10 @@ def detect_code(
                         seven["codigo"] = f"ZGRU{digs}"
                         seven["fuente"] = "regla_zgru_columna_roi"
                         seven["score"] = float(seven.get("score") or 0) + 8
+                if seven:
+                    pasos.append(
+                        f"   → columna ZGRU rot={rot}: {seven.get('codigo')}"
+                    )
                 best, meta = _consider(
                     best,
                     seven,
@@ -258,7 +325,10 @@ def detect_code(
         and len(_digits_of(str(best.get("codigo") or ""))) == 7
         and float(best.get("confianza") or 0) >= 0.85
     ):
-        for _x, col_blocks in detect_digit_columns(blocks_h, min_fragments=3)[:3]:
+        cols = detect_digit_columns(blocks_h, min_fragments=3)[:3]
+        if cols:
+            pasos.append(f"4. Columnas verticales de dígitos ({len(cols)})")
+        for _x, col_blocks in cols:
             col = crop_vertical_column(original, col_blocks)
             if col is None:
                 continue
@@ -266,6 +336,8 @@ def detect_code(
                 view = enlarge(rotate_bgr(col, rot), scale=scale)
                 roi_blocks = _ocr_variants(view, ["strong_clahe", "default"])
                 seven = extract_seven_from_vertical_roi(roi_blocks)
+                if seven:
+                    pasos.append(f"   → columna_7 rot={rot}: {seven.get('codigo')}")
                 best, meta = _consider(
                     best,
                     seven,
@@ -294,6 +366,7 @@ def detect_code(
             need_fallback = False
 
     if try_rotations and need_fallback:
+        pasos.append("5. Fallback rotación 90/270 + crops de borde")
         for degrees in (90, 270):
             img = rotate_bgr(original, degrees)
             blocks = _ocr_variants(img, ["default", "strong_clahe"])
@@ -301,6 +374,7 @@ def detect_code(
             if cand:
                 cand = dict(cand)
                 cand["orientacion"] = "vertical"
+                pasos.append(f"   → rot={degrees}: {cand.get('codigo')}")
             best, meta = _consider(
                 best,
                 cand,
@@ -314,6 +388,10 @@ def detect_code(
                 img = enlarge(rotate_bgr(strip, degrees), scale=2.2)
                 blocks = _ocr_variants(img, ["strong_clahe", "default"])
                 seven = extract_seven_from_vertical_roi(blocks)
+                if seven:
+                    pasos.append(
+                        f"   → borde {_name} rot={degrees}: {seven.get('codigo')}"
+                    )
                 best, meta = _consider(
                     best,
                     seven,
@@ -322,6 +400,14 @@ def detect_code(
                     meta=meta,
                     updates={"rotacion": degrees, "desde_borde": True, "roi": "borde"},
                 )
+
+    if best:
+        pasos.append(
+            f"Resultado final: {best.get('codigo')} · fuente={best.get('fuente')} · "
+            f"roi={meta.get('roi')} · rot={meta.get('rotacion', 0)}"
+        )
+    else:
+        pasos.append("Sin detección de código")
 
     return {
         "codigo": best.get("codigo") if best else None,
@@ -335,4 +421,6 @@ def detect_code(
         "sin_deteccion": best is None,
         "desde_borde": bool(meta.get("desde_borde")),
         "roi": meta.get("roi"),
+        "pasos": pasos,
+        "observaciones": "\n".join(pasos),
     }

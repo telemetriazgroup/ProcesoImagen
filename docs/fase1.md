@@ -1,7 +1,7 @@
 # Fase 1 — Núcleo OCR y motor de reglas
 
-**Estado:** En curso — **iteración 4** guardada (baseline para ampliar dataset)  
-**Fecha:** 24 julio 2026
+**Estado:** Gate cumplido — **86.9%** (113/130) · 25 julio 2026  
+**Baseline iter 4:** 78.4% (antes de ampliar/limpiar dataset)
 
 ## Reglas de dominio (algoritmo actual)
 

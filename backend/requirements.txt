@@ -8,6 +8,7 @@ alembic==1.15.2
 httpx==0.28.1
 pytest==8.3.5
 pillow==11.2.1
+pillow-heif==0.21.0
 # Fase 0.5 — piloto paso a paso
 opencv-python-headless==4.11.0.86
 numpy==2.2.5

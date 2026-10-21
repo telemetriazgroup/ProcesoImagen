@@ -3,7 +3,7 @@
 **Versión:** 1.0  
 **Fecha:** 24 julio 2026  
 **Fuente de requisitos:** `contexto.md`  
-**Estado actual:** Fase 1 en curso — ver `docs/fase1.md` · dataset HITL listo (111 imgs)
+**Estado actual:** Fase 3 en curso — ver `docs/fase3.md` · API Fase 2 lista · gate Fase 1 cerrado (86.9%)
 
 ---
 
@@ -320,6 +320,9 @@ Guardar `codigo_ocr` y `codigo` permite medir precisión real en piloto/producci
 | 2026-07-24 | 0.5 | HITL + 111 imágenes validadas en dataset. |
 | 2026-07-24 | 1 | Iteración 3: multipaso/borde/check-digit → **70.3%** global. |
 | 2026-07-24 | 1 | Iteración 4 guardada: Serial derecha + vertical×7 → **78.4%** (SERIAL 88.9%, horiz. 90%). Dataset se ampliará/limpiará a continuación. |
+| 2026-07-25 | 1 | Gate Fase 1 **cumplido**: **86.9%** (113/130) · SERIAL 92.3% · horizontal 95.1%. Fallos residuales ~1–2 dígitos → backlog. |
+| 2026-07-25 | 2 | Fase 2 implementada: `/api/imagenes`, `/api/registros`, Alembic, storage UUID, tests E2E + CI. |
+| 2026-07-25 | 3 | App campo React: captura → confirmación (bbox) → listado contra API Fase 2. HITL sigue en `/ui/`. |
 
 ### Checklist operativo Fase 0 / 0.5
 
@@ -329,15 +332,28 @@ Guardar `codigo_ocr` y `codigo` permite medir precisión real en piloto/producci
 
 - [x] Preprocess + OCR + reglas + API + evaluate
 - [x] Iteración 4 (geometría Serial/vertical) guardada como baseline
-- [ ] Limpiar/ampliar GT y re-evaluar
-- [ ] Cumplir gate ≥85%
-- [ ] Decidir Plan B si el gate sigue fallando
+- [x] Limpiar/ampliar GT y re-evaluar
+- [x] Cumplir gate ≥85% (86.9%)
+- [x] Plan B OCR no necesario por ahora
+
+### Checklist operativo Fase 2
+
+- [x] Modelos + Alembic + storage UUID
+- [x] Endpoints imagenes/registros
+- [x] Tests E2E + CI
+- [ ] Gate: Swagger + flujo completo + sin detección controlada (verificar en runtime)
+
+### Checklist operativo Fase 3
+
+- [x] Captura (cámara + galería) + loading
+- [x] Confirmación con bbox y código editable
+- [x] Listado con búsqueda / filtros / badge manual
+- [ ] Gate humano: móvil real + usuarios piloto
 
 ---
 
 ## 10. Cómo continuar
 
-1. Revisar `docs/reportes/eval_fase1_latest.md` (48 fallos).  
-2. Iterar reglas/preprocess (prioridad: vertical + último dígito).  
-3. Re-ejecutar `python scripts/evaluate_ocr.py`.  
-4. Al cumplir gate → Fase 2 (API completa + persistencia).
+1. Probar app campo en http://localhost:5173 con API en :8000.  
+2. Validar gate Fase 3 en teléfonos reales.  
+3. Al cumplir gate → Fase 4 (piloto en condiciones reales).

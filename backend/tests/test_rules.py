@@ -139,3 +139,40 @@ def test_seven_from_vertical_roi():
     r = extract_seven_from_vertical_roi([_b("6564180")])
     assert r is not None
     assert r["codigo"] == "6564180"
+
+
+def test_chip_no_entra_en_contenedor_ni_serie():
+    r = extract_code([_b("8951029078500034060"), _b("alaisecure.com")])
+    assert r is None or r["tipo"] != "CHIP"
+    assert r is None or not str(r.get("codigo") or "").startswith("8951")
+
+
+def test_chip_imei_de_la_tarjeta():
+    from app.core.rules import extract_chip
+
+    r = extract_chip([
+        _b("8951029078500034060", x=40, y=20, w=20, h=180),
+        _b("alaisecure.com APN alai"),
+        _b("500034060", x=80, y=200, w=40, h=16),
+    ])
+    assert r is not None
+    assert r["tipo"] == "CHIP"
+    assert r["codigo"] == "8951029078500034060"
+    assert "500034060" in r["fragmentos"]
+
+
+def test_chip_recuadro_alai_sin_codigo_completo():
+    from app.core.rules import extract_chip
+
+    r = extract_chip([_b("alaisecure.com"), _b("APN: alai"), _b("500034060")])
+    assert r is not None
+    assert r["codigo"] == "500034060"
+    assert r["fuente"] == "regla_chip_fragmento"
+
+
+def test_chip_suelto_partido():
+    from app.core.rules import extract_chip
+
+    r = extract_chip([_b("8951029078"), _b("50002327"), _b("9")])
+    assert r is not None
+    assert r["codigo"] == "8951029078500023279"

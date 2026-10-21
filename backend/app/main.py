@@ -6,8 +6,10 @@ from fastapi.responses import RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from app.api.health import router as health_router
+from app.api.imagenes import router as imagenes_router
 from app.api.ocr import router as ocr_router
 from app.api.piloto import router as piloto_router
+from app.api.registros import router as registros_router
 from app.config import get_settings
 
 settings = get_settings()
@@ -15,10 +17,10 @@ STATIC_DIR = Path(__file__).resolve().parent / "static" / "piloto"
 
 app = FastAPI(
     title=settings.app_name,
-    version="1.0.0",
+    version="2.0.0",
     description=(
         "API OCR de códigos de equipos. "
-        "Fase 1: POST /api/ocr · Fase 0.5 HITL: /ui"
+        "Fase 2: POST /api/imagenes · POST/GET /api/registros · Fase 0.5 HITL: /ui"
     ),
 )
 
@@ -33,6 +35,8 @@ app.add_middleware(
 app.include_router(health_router, prefix=settings.api_prefix)
 app.include_router(piloto_router, prefix=settings.api_prefix)
 app.include_router(ocr_router, prefix=settings.api_prefix)
+app.include_router(imagenes_router, prefix=settings.api_prefix)
+app.include_router(registros_router, prefix=settings.api_prefix)
 
 if STATIC_DIR.is_dir():
     app.mount("/ui", StaticFiles(directory=str(STATIC_DIR), html=True), name="piloto-ui")
@@ -50,7 +54,7 @@ def ensure_storage() -> None:
 
 @app.get("/")
 def root() -> RedirectResponse:
-    return RedirectResponse(url="/ui/")
+    return RedirectResponse(url="/docs")
 
 
 @app.get("/api")
@@ -61,9 +65,10 @@ def api_info() -> dict[str, str]:
         "ui": "/ui/",
         "health": f"{settings.api_prefix}/health",
         "ocr": f"{settings.api_prefix}/ocr",
+        "imagenes": f"{settings.api_prefix}/imagenes",
+        "registros": f"{settings.api_prefix}/registros",
         "piloto_analizar": f"{settings.api_prefix}/piloto/analizar",
-        "piloto_validar": f"{settings.api_prefix}/piloto/validar",
-        "phase": "1",
+        "phase": "2",
     }
 
 

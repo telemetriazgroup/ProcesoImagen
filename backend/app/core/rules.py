@@ -796,6 +796,104 @@ def _rank_key(c: dict[str, Any]) -> tuple:
     )
 
 
+_CHIP_MARCA = re.compile(r"alai|alaisecure|suma\s*m[oó]vil", re.IGNORECASE)
+
+
+def _bloques_de_digitos(blocks: list[dict[str, Any]]) -> list[tuple[str, dict[str, Any]]]:
+    partes: list[tuple[str, dict[str, Any]]] = []
+    for bloque in blocks:
+        bruto = str(bloque.get("texto") or "").strip()
+        digitos = re.sub(r"\D", "", bruto)
+        if not digitos:
+            continue
+        letras = re.sub(r"[\d\s.\-:/]", "", bruto)
+        if letras:
+            continue
+        partes.append((digitos, bloque))
+    return partes
+
+
+def extract_chip(blocks: list[dict[str, Any]]) -> dict[str, Any] | None:
+    """IMEI de tarjeta o chip. No clasifica contenedor ni serie."""
+    if not blocks:
+        return None
+    imeis: list[tuple[str, dict[str, Any]]] = []
+    fragmentos: list[tuple[str, dict[str, Any]]] = []
+    es_tarjeta = False
+
+    def anotar_imei(codigo: str, bloque: dict[str, Any]) -> None:
+        if 14 <= len(codigo) <= 22 and codigo.startswith("8951") and all(item[0] != codigo for item in imeis):
+            imeis.append((codigo, bloque))
+
+    def anotar_fragmento(codigo: str, bloque: dict[str, Any]) -> None:
+        if codigo.startswith("8951") or not (8 <= len(codigo) <= 13):
+            return
+        if len(codigo) == 9 and codigo.startswith("9"):
+            return
+        if len(codigo) >= 11 and codigo.startswith("51"):
+            return
+        if all(item[0] != codigo for item in fragmentos):
+            fragmentos.append((codigo, bloque))
+
+    for bloque in blocks:
+        texto = str(bloque.get("texto") or "")
+        if _CHIP_MARCA.search(texto):
+            es_tarjeta = True
+        digitos = re.sub(r"\D", "", texto)
+        for hallazgo in re.finditer(r"8951\d{10,18}", digitos):
+            anotar_imei(hallazgo.group(0), bloque)
+        anotar_fragmento(digitos, bloque)
+
+    partes = _bloques_de_digitos(blocks)
+    for indice, (digitos, bloque) in enumerate(partes):
+        if digitos.startswith("8951") and len(digitos) < 14:
+            junto = digitos
+            for siguiente, _origen in partes[indice + 1 :]:
+                if len(junto) >= 19:
+                    break
+                junto += siguiente
+            anotar_imei(junto, bloque)
+        if not digitos.startswith("8951") and indice + 1 < len(partes):
+            anotar_fragmento(digitos + partes[indice + 1][0], bloque)
+
+    if not imeis and not fragmentos and not es_tarjeta:
+        return None
+
+    numeros = [codigo for codigo, _bloque in imeis]
+    pistas = [codigo for codigo, _bloque in fragmentos]
+    if imeis:
+        codigo, bloque = sorted(imeis, key=lambda item: (len(item[0]) == 19, len(item[0]), float(item[1].get("confianza") or 0)), reverse=True)[0]
+        fuente = "regla_chip_imei"
+    else:
+        codigo, bloque = sorted(fragmentos, key=lambda item: (len(item[0]), float(item[1].get("confianza") or 0)), reverse=True)[0] if fragmentos else ("", blocks[0])
+        fuente = "regla_chip_fragmento" if codigo else "regla_chip_tarjeta"
+    if not codigo:
+        return {
+            "codigo": None,
+            "tipo": "CHIP",
+            "confianza": None,
+            "orientacion": "horizontal",
+            "bbox": [],
+            "fuente": fuente,
+            "score": 0,
+            "numeros": [],
+            "fragmentos": [],
+            "es_tarjeta": es_tarjeta,
+        }
+    candidato = _candidate(
+        codigo,
+        "CHIP",
+        float(bloque.get("confianza") or 0.5),
+        bloque.get("bbox"),
+        fuente,
+        score=120 if fuente == "regla_chip_imei" else 80,
+    )
+    candidato["numeros"] = numeros
+    candidato["fragmentos"] = pistas
+    candidato["es_tarjeta"] = es_tarjeta or bool(numeros)
+    return candidato
+
+
 def extract_code(
     blocks: list[dict[str, Any]],
     *,
